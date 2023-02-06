@@ -6,7 +6,6 @@ from typing import Union, Dict
 import pandas as pd
 import re
 
-import yaml
 
 class Renamer:
 
@@ -92,11 +91,6 @@ class Renamer:
                 print(path)
                 path.rename(fpath / f'{path.name} - {d_res[path.name]}')
 
-def get_config(path: Union[Path, str]) -> Dict[str, Any]:
-    r"""Get anything what was in yaml. Probably dict"""
-    with open(str(path), encoding='utf8') as conf_file:
-        exp_config = yaml.load(conf_file, Loader=yaml.Loader)
-    return exp_config
 
 print('done!')
 time.sleep(10)
