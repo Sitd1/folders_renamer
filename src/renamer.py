@@ -38,7 +38,7 @@ class Renamer:
             self._origin_folder_names = [
                 el.name for el in self.folders_path.glob("*") if el.is_dir()
             ]
-            return self._origin_folder_names
+        return self._origin_folder_names
 
     @property
     def names_from_excel(self) -> pd.Series:
@@ -49,40 +49,45 @@ class Renamer:
                                )
             df.columns = [0, 1]
             self._names_from_excel = df.set_index(0).dropna()[1].to_dict()
-            return self._names_from_excel
+        return self._names_from_excel
 
     @property
     def names_counts_from_file(self) -> dict:
-        names_counts_from_file_ = dict()
-        for name in names_from_excel.keys():
-            nme = int(re.findall(name_pattern_in_file, name)[0])
-            names_counts_from_file_[nme] = d_counts.get(nme, 0) + 1
-        self._names_counts_from_file = names_counts_from_file_
+        if self._names_counts_from_file is None:
+            names_counts_from_file_ = dict()
+            for name in names_from_excel.keys():
+                nme = int(re.findall(name_pattern_in_file, name)[0])
+                names_counts_from_file_[nme] = d_counts.get(nme, 0) + 1
+            self._names_counts_from_file = names_counts_from_file_
         return self._names_counts_from_file
 
     @property
     def merged_inform_from_file(self):
-        merged_names_from_file_ = dict()
-        for name_from_excel in names_from_excel.keys():
-            name_from_regex = int(re.findall(name_pattern_in_file, name_from_excel)[0])
-            if d_counts[name_from_regex] == 1:
-                val_len = self.filename_max_length
-            else:
-                val_len = self.filename_max_length // self.names_counts_from_file[name_from_regex]
-            val = ' '.join(re.findall(r"[A-Za-z0-9а-яА-Яё\.]+", names_from_excel[name_from_excel]))[:val_len]
-            merged_names_from_file_[name_from_regex] = merged_names_from_file_.get(name_from_regex, [])
-            merged_names_from_file_[name_from_regex].append(val)
-        self._merged_names_from_file = merged_names_from_file_
+        if self._merged_inform_from_file is None:
+            merged_names_from_file_ = dict()
+            for name_from_excel in names_from_excel.keys():
+                name_from_regex = int(re.findall(name_pattern_in_file, name_from_excel)[0])
+                if d_counts[name_from_regex] == 1:
+                    val_len = self.filename_max_length
+                else:
+                    val_len = self.filename_max_length // self.names_counts_from_file[name_from_regex]
+                val = ' '.join(re.findall(r"[A-Za-z0-9а-яА-Яё\.]+", names_from_excel[name_from_excel]))[:val_len]
+                merged_names_from_file_[name_from_regex] = merged_names_from_file_.get(name_from_regex, [])
+                merged_names_from_file_[name_from_regex].append(val)
+            self._merged_names_from_file = merged_names_from_file_
         return self._merged_names_from_file
 
     @property
     def full_names(self):
         if self._full_names is None:
+            full_names_ = dict()
             for origin_name in self.origin_folder_names:
                 for name_from_file in self.merged_inform_from_file:
                     if name_from_file in [int(i) for i in re.findall(r"(\d{2,})+", origin_name)]:
-                        d_pre_res[origin_name] = d_pre_res.get(origin_name, [])
-                        d_pre_res[origin_name].append(' '.join(names_edit[name_from_file]).lower())
+                        full_names_[origin_name] = full_names_.get(origin_name, [])
+                        full_names_[origin_name].append(' '.join(names_edit[name_from_file]).lower())
+            self._full_names = full_names_
+        return self._full_names
 
     def rename(self):
         for path in self.folders_path.glob('*'):
@@ -91,10 +96,3 @@ class Renamer:
                 print(path)
                 path.rename(fpath / f'{path.name} - {d_res[path.name]}')
 
-
-print('done!')
-time.sleep(10)
-print('closing')
-for i in range(5,1):
-    print(i)
-    time.sleep(1)
