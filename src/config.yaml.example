@@ -1,0 +1,18 @@
+folders_path: 'path'
+filename_max_length: 60  # default 60 symbols
+
+#excel_file_part
+excel_file_path: <path>
+skiprows: 6
+usecols:
+  - 2
+  - 3
+words_to_del:
+  - по
+  - в
+  - и
+  - на
+  - с
+  - для
+  - от
+names_pattern_from_file: r"(\d+)"
