@@ -1,6 +1,5 @@
 import copy
 from pathlib import Path
-from typing import Union
 
 import pandas as pd
 import re
@@ -10,10 +9,10 @@ class Renamer:
 
     def __init__(
             self,
-            config: dict[Union[Path, str]],
+            config: dict,
     ):
         self.config = copy.deepcopy(config)
-        self.folders_path = config.get('folders_path', None)
+        self.folders_path = Path(config.get('folders_path', None))
         self.excel_file_path = config.get('excel_file_path', None)
         self.filename_max_length = config.get('filename_max_length', 60)
 
@@ -21,6 +20,8 @@ class Renamer:
         self.excel_usecols = config.get('usecols', None)
 
         self.names_pattern_from_file = config.get('names_pattern_from_file', None)
+        self.inform_pattern_from_file = config.get('inform_pattern_from_file', None)
+
         self.words_to_del = config.get('words_to_del', None)
 
         self._names_from_excel = None
@@ -31,7 +32,7 @@ class Renamer:
         self._cleaned_names = None
 
     @property
-    def origin_folder_names(self):
+    def origin_folder_names(self) -> list[str]:
         if self._origin_folder_names is None:
             self._origin_folder_names = [
                 el.name for el in self.folders_path.glob("*") if el.is_dir()
@@ -50,7 +51,7 @@ class Renamer:
         return self._names_from_excel
 
     @property
-    def names_counts_from_file(self) -> dict:
+    def names_counts_from_file(self) -> dict[int]:
         if self._names_counts_from_file is None:
             names_counts_from_file_ = dict()
             for name in self.names_from_excel.keys():
@@ -60,23 +61,28 @@ class Renamer:
         return self._names_counts_from_file
 
     @property
-    def merged_inform_from_file(self):
+    def merged_inform_from_file(self) -> dict[list[str]]:
         if self._merged_inform_from_file is None:
             merged_names_from_file_ = dict()
             for name_from_excel in self.names_from_excel.keys():
                 name_from_regex = int(re.findall(self.names_pattern_from_file, name_from_excel)[0])
-                if merged_names_from_file_[name_from_regex] == 1:
+                if self.names_counts_from_file[name_from_regex] == 1:
                     val_len = self.filename_max_length
                 else:
                     val_len = self.filename_max_length // self.names_counts_from_file[name_from_regex]
-                val = ' '.join(re.findall(r"[A-Za-z\dа-яА-Яё\.]+", self.names_from_excel[name_from_excel]))[:val_len]
+                val = ' '.join(
+                    re.findall(
+                        self.inform_pattern_from_file,
+                        self.names_from_excel[name_from_excel]
+                    )
+                )[:val_len]
                 merged_names_from_file_[name_from_regex] = merged_names_from_file_.get(name_from_regex, [])
                 merged_names_from_file_[name_from_regex].append(val)
             self._merged_inform_from_file = merged_names_from_file_
         return self._merged_inform_from_file
 
     @property
-    def full_names(self):
+    def full_names(self) -> dict[str]:
         if self._full_names is None:
             full_names_ = dict()
             for origin_name in self.origin_folder_names:
@@ -90,7 +96,7 @@ class Renamer:
         return self._full_names
 
     @property
-    def cleaned_names(self):
+    def cleaned_names(self) -> dict[str]:
         if self._cleaned_names is None:
             cleaned_names_ = dict()
             for key, val in self.full_names.items():
